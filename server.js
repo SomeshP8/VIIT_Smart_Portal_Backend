@@ -23,7 +23,7 @@ import adminRoutes from './routes/adminRoutes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load env variables (look in root directory and local server directory)
+// Load env variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config();
 
@@ -33,10 +33,30 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 
+// Allowed origins: support multiple (localhost dev + Vercel production frontend)
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy: origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+};
+
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   },
@@ -50,14 +70,9 @@ app.use((req, res, next) => {
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Turn off CSP during development for simple integrations
+  contentSecurityPolicy: false,
 }));
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -84,13 +99,11 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log(`Socket client connected: ${socket.id}`);
 
-  // User joins their private room based on user ID for personal notifications
   socket.on('join_user', (userId) => {
     socket.join(userId);
     console.log(`User ${userId} joined their personal room`);
   });
 
-  // User joins room based on department + academic year for announcements/events
   socket.on('join_campus_group', ({ department, year }) => {
     const groupName = `${department}_Year${year}`;
     socket.join(groupName);
@@ -111,3 +124,5 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });
+
+export default app;
