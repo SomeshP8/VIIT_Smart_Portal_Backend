@@ -37,6 +37,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://viit-smart-portal-frontend.vercel.app',
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
@@ -44,7 +45,13 @@ const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
+    
+    // Check if origin is in the allowed list or is a Vercel deployment
+    const isAllowed = allowedOrigins.some(allowed => 
+      allowed && origin.startsWith(allowed.replace(/\/$/, ''))
+    ) || origin.endsWith('.vercel.app');
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       callback(new Error(`CORS policy: origin ${origin} not allowed`));
@@ -56,7 +63,18 @@ const corsOptions = {
 // Initialize Socket.io
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.some(allowed => 
+        allowed && origin.startsWith(allowed.replace(/\/$/, ''))
+      ) || origin.endsWith('.vercel.app');
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS policy: origin ${origin} not allowed`));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   },
