@@ -138,7 +138,7 @@ export const createEvent = async (req, res, next) => {
 
     let bannerUrl = 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800';
     if (req.file) {
-      bannerUrl = `/uploads/${req.file.filename}`;
+      bannerUrl = req.file.path; // Cloudinary URL set by multer-storage-cloudinary
     }
 
     const event = await Event.create({

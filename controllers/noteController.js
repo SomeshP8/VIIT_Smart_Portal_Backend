@@ -15,7 +15,7 @@ export const uploadNote = async (req, res, next) => {
 
     const note = await Note.create({
       ...validatedData,
-      fileUrl: `/uploads/${req.file.filename}`, // Local storage path (Cloudinary configuration in Phase 8)
+      fileUrl: req.file.path, // Cloudinary URL set by multer-storage-cloudinary
       uploadedBy: req.user._id,
     });
 

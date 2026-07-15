@@ -12,7 +12,7 @@ export const createLostItem = async (req, res, next) => {
     let imageUrl = '';
     if (req.file) {
       // Local file path (Cloudinary configuration will wrap this in Phase 8)
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageUrl = req.file.path; // Cloudinary URL set by multer-storage-cloudinary
     }
 
     const lostItem = await LostItem.create({

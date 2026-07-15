@@ -29,7 +29,7 @@ export const createAnnouncement = async (req, res, next) => {
 
     let attachmentUrl = '';
     if (req.file) {
-      attachmentUrl = `/uploads/${req.file.filename}`;
+      attachmentUrl = req.file.path; // Cloudinary URL set by multer-storage-cloudinary
     }
 
     const announcement = await Announcement.create({
